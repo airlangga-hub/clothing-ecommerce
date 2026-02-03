@@ -189,8 +189,22 @@ func (h *Handler) DeleteCartItemsByUserID(userID int) error {
 	return nil
 }
 
-// create order by user id
-
+// create order
+func (h *Handler) CreateOrder(userID, totalPrice int) error {
+	_, err := h.DB.Exec(
+		`INSERT INTO orders
+			(user_id, total_price)
+		VALUES
+			(?, ?);`,
+		userID, totalPrice,
+	)
+	
+	if err != nil {
+		return err
+	}
+	
+	return nil
+}
 
 // read orders by user id
 
