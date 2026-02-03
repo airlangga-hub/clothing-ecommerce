@@ -2,7 +2,7 @@ CREATE TABLE `products` (
   `id` INTEGER AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
   `description` VARCHAR(100) NOT NULL,
-  `price` FLOAT NOT NULL
+  `price` INTEGER NOT NULL
 );
 
 CREATE TABLE `users` (
@@ -35,7 +35,7 @@ CREATE TABLE `order_items` (
 CREATE TABLE `orders` (
   `id` INTEGER AUTO_INCREMENT PRIMARY KEY,
   `user_id` INTEGER NOT NULL,
-  `total_price` FLOAT NOT NULL,
+  `total_price` INTEGER NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 );
