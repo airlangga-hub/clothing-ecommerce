@@ -106,6 +106,7 @@ Login:
 
 Exit:
 	fmt.Println("\nGoodbye!!!!")
+	return
 
 UserMenu:
 	fmt.Println("\nUser Menu:")
