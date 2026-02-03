@@ -16,6 +16,7 @@ CREATE TABLE cart_items (
   id INTEGER AUTO_INCREMENT PRIMARY KEY,
   user_id INTEGER NOT NULL,
   product_id INTEGER NOT NULL,
+  unit_price INTEGER NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
   FOREIGN KEY (user_id) REFERENCES users (id),
   FOREIGN KEY (product_id) REFERENCES products (id),
