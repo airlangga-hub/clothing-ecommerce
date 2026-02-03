@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/airlangga-hub/clothing-ecommerce/handler"
 	"github.com/airlangga-hub/clothing-ecommerce/entity"
+	"github.com/airlangga-hub/clothing-ecommerce/handler"
 	"github.com/joho/godotenv"
 )
 
@@ -28,11 +28,11 @@ func main() {
 	}
 	defer db.Close()
 
-	handler := NewHandler(db)
+	h := handler.NewHandler(db)
 
 	// variables
-	var user User
-	var u User
+	var user entity.User
+	var u entity.User
 	var input string
 	scanner := bufio.NewScanner(os.Stdin)
 

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
+	"github.com/airlangga-hub/clothing-ecommerce/entity"
 )
 
 type Handler struct {
@@ -16,12 +18,17 @@ func NewHandler(db *sql.DB) *Handler {
 
 // create user
 func (h *Handler) CreateUser(email, password string) error {
+	user := entity.User{
+		Email:    email,
+		Password: password,
+		Role:     "customer",
+	}
 	_, err := h.DB.Exec(
 		`INSERT INTO users
-			(email, password)
+			(email, password, role)
 		VALUES
-			(?, ?);`,
-		email, password,
+			(?, ?, ?);`,
+		user.Email, user.Password, user.Role,
 	)
 
 	if err != nil {
@@ -32,10 +39,10 @@ func (h *Handler) CreateUser(email, password string) error {
 }
 
 // read user by email
-func (h *Handler) ReadUserByEmail(email string) (User, error) {
-	var user User
+func (h *Handler) ReadUserByEmail(email string) (entity.User, error) {
+	var user entity.User
 
-	if err := h.DB.QueryRow(
+	err := h.DB.QueryRow(
 		`SELECT
 			id,
 			email,
@@ -49,21 +56,26 @@ func (h *Handler) ReadUserByEmail(email string) (User, error) {
 		&user.Email,
 		&user.Password,
 		&user.Role,
-	); err != nil {
-		return User{}, err
+	)
+
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return entity.User{}, fmt.Errorf("User with email %s not found.", email)
+		}
+		return entity.User{}, err
 	}
 
 	return user, nil
 }
 
 // create product
-func (h *Handler) CreateProduct(name, description string, price int) error {
+func (h *Handler) CreateProduct(p entity.Product) error {
 	_, err := h.DB.Exec(
 		`INSERT INTO products
 			(name, description, price)
 		VALUES
 			(?, ?, ?);`,
-		name, description, price,
+		p.Name, p.Description, p.Price, p.Quantity,
 	)
 
 	if err != nil {
