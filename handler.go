@@ -282,7 +282,7 @@ func (h *Handler) CreateOrder(order Order) error {
 			return err
 		}
 	}
-	
+
 	// delete cart items
 	if err := h.DeleteCartItemsByUserID(order.UserId); err != nil {
 		return err

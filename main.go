@@ -105,11 +105,10 @@ Exit:
 UserMenu:
 	fmt.Println("\nUser Menu:")
 	fmt.Println("1. Show All Products")
-	fmt.Println("2. Search Products")
-	fmt.Println("3. Add To Cart")
-	fmt.Println("4. Show Cart")
-	fmt.Println("5. Create Order")
-	fmt.Println("6. Exit")
+	fmt.Println("2. Add To Cart")
+	fmt.Println("3. Show Cart")
+	fmt.Println("4. Create Order")
+	fmt.Println("5. Exit")
 	fmt.Print("Your input (1/2/3/4/5): ")
 
 	scanner.Scan()
