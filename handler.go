@@ -55,7 +55,21 @@ func (h *Handler) ReadUserByEmail(email string) (User, error) {
 }
 
 // create product
-
+func (h *Handler) CreateProduct (name, description string, price int) error {	
+	_, err := h.DB.Exec(
+		`INSERT INTO products
+			(name, description, price)
+		VALUES
+			(?, ?, ?);`,
+		name, description, price,
+	)
+	
+	if err != nil {
+		return err
+	}
+	
+	return nil
+}
 
 // read all products
 
