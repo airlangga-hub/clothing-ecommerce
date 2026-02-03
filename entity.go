@@ -13,14 +13,14 @@ type Product struct {
 	Id          int
 	Name        string
 	Description string
-	Price       int
+	Price       float32
 }
 
 type CartItem struct {
 	Id        int
 	UserId    int
 	ProductId int
-	UnitPrice int
+	UnitPrice float32
 	Quantity  int
 }
 
@@ -28,14 +28,14 @@ type OrderItem struct {
 	Id        int
 	OrderId   int
 	ProductId int
-	UnitPrice int
+	UnitPrice float32
 	Quantity  int
 }
 
 type Order struct {
 	Id         int
 	UserId     int
-	TotalPrice int
+	TotalPrice float32
 	CreatedAt  time.Time
 	Products   []Product
 }

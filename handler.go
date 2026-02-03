@@ -72,7 +72,15 @@ func (h *Handler) CreateProduct (name, description string, price int) error {
 }
 
 // read all products
-
+func (h *Handler) ReadAllProducts() ([]Product, error) {
+	rows, err := h.DB.Query(
+		`SElECT
+			id,
+			name,
+			description,
+			price;`
+	)
+}
 
 // create cart item
 
