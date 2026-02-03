@@ -21,18 +21,18 @@ func (h *Handler) CreateUser(email, password string) error {
 			(?, ?);`,
 		email, password,
 	)
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
 // read user by email
 func (h *Handler) ReadUserByEmail(email string) (User, error) {
 	var user User
-	
+
 	if err := h.DB.QueryRow(
 		`SELECT
 			id,
@@ -50,12 +50,12 @@ func (h *Handler) ReadUserByEmail(email string) (User, error) {
 	); err != nil {
 		return User{}, err
 	}
-	
+
 	return user, nil
 }
 
 // create product
-func (h *Handler) CreateProduct (name, description string, price int) error {	
+func (h *Handler) CreateProduct(name, description string, price int) error {
 	_, err := h.DB.Exec(
 		`INSERT INTO products
 			(name, description, price)
@@ -63,11 +63,11 @@ func (h *Handler) CreateProduct (name, description string, price int) error {
 			(?, ?, ?);`,
 		name, description, price,
 	)
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -81,19 +81,18 @@ func (h *Handler) ReadAllProducts() ([]Product, error) {
 			price
 		FROM products;`,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
 
 	products := make([]Product, 0, 10)
-	
+
 	for rows.Next() {
 		var product Product
 		var price int
-		
+
 		if err := rows.Scan(
 			&product.Id,
 			&product.Name,
@@ -102,21 +101,21 @@ func (h *Handler) ReadAllProducts() ([]Product, error) {
 		); err != nil {
 			return nil, err
 		}
-		
+
 		product.Price = float32(price) / 100
-		
+
 		products = append(products, product)
 	}
-	
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return products, nil
 }
 
 // create cart item
-func (h *Handler) CreateCartItem(userID, productID , quantity int) error {
+func (h *Handler) CreateCartItem(userID, productID, quantity int) error {
 	_, err := h.DB.Exec(
 		`INSERT INTO cart_items
 			(user_id, product_id, quantity)
@@ -124,11 +123,11 @@ func (h *Handler) CreateCartItem(userID, productID , quantity int) error {
 			(?, ?, ?);`,
 		userID, productID, quantity,
 	)
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -144,17 +143,17 @@ func (h *Handler) ReadCartItemsByUserID(userID int) ([]CartItem, error) {
 		WHERE user_id = ?;`,
 		userID,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	cartItems := make([]CartItem, 0, 10)
-	
+
 	for rows.Next() {
 		var cartItem CartItem
-		
+
 		if err := rows.Scan(
 			&cartItem.Id,
 			&cartItem.UserId,
@@ -163,14 +162,14 @@ func (h *Handler) ReadCartItemsByUserID(userID int) ([]CartItem, error) {
 		); err != nil {
 			return nil, err
 		}
-		
+
 		cartItems = append(cartItems, cartItem)
 	}
-	
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return cartItems, nil
 }
 
@@ -181,11 +180,11 @@ func (h *Handler) DeleteCartItemsByUserID(userID int) error {
 		WHERE user_id = ?;`,
 		userID,
 	)
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -198,16 +197,88 @@ func (h *Handler) CreateOrder(userID, totalPrice int) error {
 			(?, ?);`,
 		userID, totalPrice,
 	)
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
 // read orders by user id
+func (h *Handler) ReadOrdersByUserID(userID int) ([]Order, []int, error) {
+	rows, err := h.DB.Query(
+		`SELECT
+			o.id,
+			o.user_id,
+			o.total_price,
+			o.created_at,
+			oi.product_id,
+			oi.quantity,
+		FROM orders o
+		JOIN order_items oi ON o.id = oi.order_id
+		WHERE o.user_id = ?;`,
+		userID,
+	)
 
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
 
-// create order items
+	mapOrders := make(map[int]Order)
+	productIDset := make(map[int]struct{})
 
+	for rows.Next() {
+		var order Order
+		var product Product
+
+		if err := rows.Scan(
+			&order.Id,
+			&order.UserId,
+			&order.TotalPrice,
+			&order.CreatedAt,
+			&product.Id,
+			&product.Quantity,
+		); err != nil {
+			return nil, nil, err
+		}
+
+		productIDset[product.Id] = struct{}{}
+
+		if order, exist := mapOrders[order.Id]; exist {
+			order.Products = append(
+				order.Products,
+				Product{
+					Id:       product.Id,
+					Quantity: product.Quantity,
+				},
+			)
+		} else {
+			mapOrders[order.Id] = Order{
+				Id:         order.Id,
+				UserId:     order.UserId,
+				TotalPrice: order.TotalPrice,
+				CreatedAt:  order.CreatedAt,
+				Products: []Product{
+					{
+						Id:       product.Id,
+						Quantity: product.Quantity,
+					},
+				},
+			}
+		}
+	}
+	
+	orders := make([]Order, len(mapOrders))
+	for _, order := range mapOrders {
+		orders = append(orders, order)
+	}
+	
+	productIDs := make([]int, len(productIDset))
+	for id := range productIDset {
+		productIDs = append(productIDs, id)
+	}
+	
+	return orders, productIDs, nil
+}
