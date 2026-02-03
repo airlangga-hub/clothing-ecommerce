@@ -118,12 +118,10 @@ UserMenu:
 	case "1":
 		goto ShowAllProducts
 	case "2":
-		goto SearchProducts
-	case "3":
 		goto AddToCart
-	case "4":
+	case "3":
 		goto ShowCart
-	case "5":
+	case "4":
 		goto CreateOrder
 	default:
 		goto Exit
