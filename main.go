@@ -37,6 +37,8 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Println("\n------- Welcome to Hacktiv8 Clothing Store -------")
+	
+MainMenu:
 	fmt.Println("\nMain Menu:")
 	fmt.Println("1. Register")
 	fmt.Println("2. Login")
@@ -66,13 +68,13 @@ Register:
 
 	if err := handler.CreateUser(user.Email, user.Password); err != nil {
 		slog.Error(err.Error())
-		return
+		goto MainMenu
 	}
 
 	user, err = handler.ReadUserByEmail(user.Email)
 	if err != nil {
 		slog.Error(err.Error())
-		return
+		goto MainMenu
 	}
 
 	goto UserMenu
@@ -89,7 +91,7 @@ Login:
 	u, err = handler.ReadUserByEmail(user.Email)
 	if err != nil {
 		slog.Error(err.Error())
-		return
+		goto MainMenu
 	}
 
 	if u.Password != user.Password {
