@@ -254,6 +254,7 @@ AddToCart:
 	}
 	
 	fmt.Println("\nAdd to cart success!!!!")
+	goto UserMenu
 
 ShowCart:
 	cartItems, err = h.ReadCartItemsByUserID(user.Id)
