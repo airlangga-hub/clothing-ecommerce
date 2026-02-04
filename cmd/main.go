@@ -37,14 +37,14 @@ func main() {
 
 	// variables
 	var (
-		user      entity.User
-		u         entity.User
-		products  []entity.Product
-		product   entity.Product
-		priceStr  string
-		input     string
-		buf       bytes.Buffer
-		price     int
+		user     entity.User
+		u        entity.User
+		products []entity.Product
+		product  entity.Product
+		priceStr string
+		input    string
+		buf      bytes.Buffer
+		price    int
 	)
 	w := tabwriter.NewWriter(&buf, 0, 0, 1, ' ', tabwriter.Debug)
 	scanner := bufio.NewScanner(os.Stdin)
@@ -251,7 +251,7 @@ AddToCart:
 		slog.Error(err.Error())
 		goto AddToCart
 	}
-	
+
 	fmt.Println("\nAdd to cart success!!!!")
 	goto UserMenu
 
@@ -262,18 +262,25 @@ ShowCart:
 		fmt.Println("\nFailed to load cart. Please try again.")
 		goto ShowCart
 	}
-	
+
 	if len(products) == 0 {
 		fmt.Println("\nYour cart is empty.")
 		goto ShowCart
 	} else {
 		fmt.Println("\nCart Contents: ")
 		for _, product := range products {
-			fmt.Fprintln(w, "| Name\t Description\t Price\t Quantity")
+			fmt.Fprintln(w, "| Name\t Description\t Price\t Quantity\t")
 			fmt.Fprintf(w, "| %s\t %s\t Rp%.2f\t %d\t\n", product.Name, product.Description, product.Price, product.Quantity)
 		}
 	}
-	
+
+	if err := w.Flush(); err != nil {
+		slog.Error(err.Error())
+		goto UserMenu
+	}
+
+	helper.PrintStdOut(&buf)
+
 	goto UserMenu
 
 CreateOrders:
