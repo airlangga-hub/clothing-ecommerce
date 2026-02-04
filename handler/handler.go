@@ -1,9 +1,11 @@
-package main
+package handler
 
 import (
 	"database/sql"
 	"fmt"
 	"strings"
+
+	"github.com/airlangga-hub/clothing-ecommerce/entity"
 )
 
 type Handler struct {
@@ -32,8 +34,8 @@ func (h *Handler) CreateUser(email, password string) error {
 }
 
 // read user by email
-func (h *Handler) ReadUserByEmail(email string) (User, error) {
-	var user User
+func (h *Handler) ReadUserByEmail(email string) (entity.User, error) {
+	var user entity.User
 
 	if err := h.DB.QueryRow(
 		`SELECT
@@ -50,7 +52,7 @@ func (h *Handler) ReadUserByEmail(email string) (User, error) {
 		&user.Password,
 		&user.Role,
 	); err != nil {
-		return User{}, err
+		return entity.User{}, err
 	}
 
 	return user, nil
@@ -74,7 +76,7 @@ func (h *Handler) CreateProduct(name, description string, price int) error {
 }
 
 // read products by product ids
-func (h *Handler) ReadProductsByProductIDs(productIDs []int) ([]Product, error) {
+func (h *Handler) ReadProductsByProductIDs(productIDs []int) ([]entity.Product, error) {
 	questionMarks := make([]string, len(productIDs))
 	IDs := make([]any, len(productIDs))
 
@@ -100,10 +102,10 @@ func (h *Handler) ReadProductsByProductIDs(productIDs []int) ([]Product, error) 
 	}
 	defer rows.Close()
 
-	products := make([]Product, 0, 10)
+	products := make([]entity.Product, 0, 10)
 
 	for rows.Next() {
-		var product Product
+		var product entity.Product
 		var price int
 
 		if err := rows.Scan(
@@ -124,7 +126,7 @@ func (h *Handler) ReadProductsByProductIDs(productIDs []int) ([]Product, error) 
 }
 
 // read all products
-func (h *Handler) ReadAllProducts() ([]Product, error) {
+func (h *Handler) ReadAllProducts() ([]entity.Product, error) {
 	rows, err := h.DB.Query(
 		`SElECT
 			id,
@@ -139,10 +141,10 @@ func (h *Handler) ReadAllProducts() ([]Product, error) {
 	}
 	defer rows.Close()
 
-	products := make([]Product, 0, 10)
+	products := make([]entity.Product, 0, 10)
 
 	for rows.Next() {
-		var product Product
+		var product entity.Product
 		var price int
 
 		if err := rows.Scan(
@@ -186,7 +188,7 @@ func (h *Handler) CreateCartItem(userID, productID, quantity int) error {
 }
 
 // read cart items by user id
-func (h *Handler) ReadCartItemsByUserID(userID int) ([]CartItem, error) {
+func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.CartItem, error) {
 	rows, err := h.DB.Query(
 		`SELECT
 			id,
@@ -203,10 +205,10 @@ func (h *Handler) ReadCartItemsByUserID(userID int) ([]CartItem, error) {
 	}
 	defer rows.Close()
 
-	cartItems := make([]CartItem, 0, 10)
+	cartItems := make([]entity.CartItem, 0, 10)
 
 	for rows.Next() {
-		var cartItem CartItem
+		var cartItem entity.CartItem
 
 		if err := rows.Scan(
 			&cartItem.Id,
@@ -243,7 +245,7 @@ func (h *Handler) DeleteCartItemsByUserID(userID int) error {
 }
 
 // create order
-func (h *Handler) CreateOrder(order Order) error {
+func (h *Handler) CreateOrder(order entity.Order) error {
 	tx, err := h.DB.Begin()
 	if err != nil {
 		return err
@@ -298,7 +300,7 @@ func (h *Handler) CreateOrder(order Order) error {
 }
 
 // read orders by user id
-func (h *Handler) ReadOrdersByUserID(userID int) ([]Order, error) {
+func (h *Handler) ReadOrdersByUserID(userID int) ([]entity.Order, error) {
 	rows, err := h.DB.Query(
 		`SELECT
 			o.id,
@@ -318,12 +320,12 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]Order, error) {
 	}
 	defer rows.Close()
 
-	mapOrders := make(map[int]Order)
+	mapOrders := make(map[int]entity.Order)
 	productIDset := make(map[int]struct{})
 
 	for rows.Next() {
-		var order Order
-		var product Product
+		var order entity.Order
+		var product entity.Product
 
 		if err := rows.Scan(
 			&order.Id,
@@ -341,18 +343,18 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]Order, error) {
 		if order, exist := mapOrders[order.Id]; exist {
 			order.Products = append(
 				order.Products,
-				Product{
+				entity.Product{
 					Id:       product.Id,
 					Quantity: product.Quantity,
 				},
 			)
 		} else {
-			mapOrders[order.Id] = Order{
+			mapOrders[order.Id] = entity.Order{
 				Id:         order.Id,
 				UserId:     order.UserId,
 				TotalPrice: order.TotalPrice,
 				CreatedAt:  order.CreatedAt,
-				Products: []Product{
+				Products: []entity.Product{
 					{
 						Id:       product.Id,
 						Quantity: product.Quantity,
@@ -372,12 +374,12 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]Order, error) {
 		return nil, err
 	}
 
-	mapProducts := make(map[int]Product)
+	mapProducts := make(map[int]entity.Product)
 	for _, product := range products {
 		mapProducts[product.Id] = product
 	}
 
-	orders := make([]Order, 0, len(mapOrders))
+	orders := make([]entity.Order, 0, len(mapOrders))
 	for _, order := range mapOrders {
 		for i, product := range order.Products {
 			if p, exist := mapProducts[product.Id]; exist {
