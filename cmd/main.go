@@ -258,6 +258,12 @@ AddToCart:
 
 ShowCart:
 	cartItems, err = h.ReadCartItemsByUserID(user.Id)
+	if err != nil {
+		slog.Error(err.Error())
+		fmt.Println("\nFailed to load cart. Please try again.")
+		goto ShowCart
+	}
+	
 	if len(cartItems) == 0 {
 		fmt.Println("\nYour cart is empty.")
 		goto ShowCart
@@ -267,12 +273,8 @@ ShowCart:
 			fmt.Printf("- Product ID: %d, Total: %d\n", item.ProductId, item.Quantity)
 		}
 	}
-
-	if err != nil {
-		slog.Error(err.Error())
-		fmt.Println("\nFailed to load cart. Please try again.")
-		goto ShowCart
-	}
+	
+	goto UserMenu
 
 CreateOrders:
 	err = h.CreateOrder(entity.Order{})
