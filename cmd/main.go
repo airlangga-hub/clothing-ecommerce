@@ -41,6 +41,7 @@ func main() {
 	var products []entity.Product
 	var product entity.Product
 	var cartItems []entity.CartItem
+	var priceStr string
 	var input string
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 1, ' ', tabwriter.Debug)
@@ -127,14 +128,17 @@ Exit:
 
 AdminMenu:
 	fmt.Println("\nAdmin Menu:")
-	fmt.Println("\n1.Create a Product")
+	fmt.Println("1. Show All Products")
+	fmt.Println("2. Create Product")
 
 	scanner.Scan()
 	input = strings.TrimSpace(scanner.Text())
 
 	switch input {
-	// case "1":
-	// goto CreateProduct
+	case "1":
+		goto CreateProduct
+	case "2":
+		goto ShowAllProducts
 	default:
 		goto Exit
 	}
@@ -164,6 +168,40 @@ UserMenu:
 		goto Exit
 	}
 
+	// Admin function
+CreateProduct:
+	fmt.Print("\nProduct name: ")
+	scanner.Scan()
+	product.Name = strings.TrimSpace(scanner.Text())
+	if product.Name == "" {
+		fmt.Println("Name cannot be empty!")
+		goto CreateProduct
+	}
+
+	fmt.Print("Description: ")
+	scanner.Scan()
+	product.Description = strings.TrimSpace(scanner.Text())
+
+	fmt.Print("Price (in Rupiah, e.g., 75000): ")
+	scanner.Scan()
+	priceStr = strings.TrimSpace(scanner.Text())
+
+	product.Price, err = strconv.Atoi(priceStr)
+	if err != nil || product.Price <= 0 {
+		fmt.Println("Invalid price! Must be a positive number.")
+		goto CreateProduct
+	}
+
+	err = h.CreateProduct(product.Name, product.Description, product.Price)
+	if err != nil {
+		slog.Error(err.Error())
+		fmt.Println(" Failed to create product. Please try again.")
+		goto CreateProduct
+	}
+
+	fmt.Println("Product created successfully!!!!")
+
+	// Users function
 ShowAllProducts:
 	fmt.Println("\nShowing all products.....")
 	fmt.Fprintln(w, "| Name\t Description\t Price\t")
