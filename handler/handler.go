@@ -188,14 +188,15 @@ func (h *Handler) CreateCartItem(userID, productID, quantity int) error {
 }
 
 // read cart items by user id
-func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.CartItem, error) {
+func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.Product, error) {
 	rows, err := h.DB.Query(
 		`SELECT
-			id,
-			user_id,
-			product_id,
-			quantity
-		FROM cart_items
+			p.name,
+			p.description,
+			p.price,
+			ci.quantity
+		FROM cart_items ci
+		JOIN products p ON ci.product_id = p.id
 		WHERE user_id = ?;`,
 		userID,
 	)
@@ -205,28 +206,28 @@ func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.CartItem, error) {
 	}
 	defer rows.Close()
 
-	cartItems := make([]entity.CartItem, 0, 10)
+	products := make([]entity.Product, 0, 10)
 
 	for rows.Next() {
-		var cartItem entity.CartItem
+		var product entity.Product
 
 		if err := rows.Scan(
-			&cartItem.Id,
-			&cartItem.UserId,
-			&cartItem.ProductId,
-			&cartItem.Quantity,
+			&product.Name,
+			&product.Description,
+			&product.Price,
+			&product.Quantity,
 		); err != nil {
 			return nil, err
 		}
 
-		cartItems = append(cartItems, cartItem)
+		products = append(products, product)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return cartItems, nil
+	return products, nil
 }
 
 // delete cart items by user id
