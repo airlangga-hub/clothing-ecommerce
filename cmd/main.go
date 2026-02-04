@@ -37,14 +37,15 @@ func main() {
 
 	// variables
 	var (
-		user     entity.User
-		u        entity.User
-		products []entity.Product
-		product  entity.Product
-		priceStr string
-		input    string
-		buf      bytes.Buffer
-		price    int
+		user       entity.User
+		u          entity.User
+		products   []entity.Product
+		product    entity.Product
+		priceStr   string
+		input      string
+		buf        bytes.Buffer
+		price      int
+		totalprice float32
 	)
 	w := tabwriter.NewWriter(&buf, 0, 0, 1, ' ', tabwriter.Debug)
 	scanner := bufio.NewScanner(os.Stdin)
@@ -134,6 +135,7 @@ AdminMenu:
 	fmt.Println("2. Show User Reports")
 	fmt.Println("3. Show Order Reports")
 	fmt.Println("4. Show Stock Reports")
+	fmt.Println("5. Exit")
 	fmt.Print("Your input (1/2/3/4): ")
 
 	scanner.Scan()
@@ -210,6 +212,8 @@ CreateProduct:
 
 	fmt.Println("Product created successfully!!!!")
 
+	goto AdminMenu
+
 	// Users function
 ShowAllProducts:
 	fmt.Println("\nShowing all products.....")
@@ -272,12 +276,12 @@ ShowCart:
 
 	if len(products) == 0 {
 		fmt.Println("\nYour cart is empty.")
-		goto ShowCart
+		goto UserMenu
 	} else {
 		fmt.Println("\nCart Contents: ")
+		fmt.Fprintln(w, "| productId\t Name\t Description\t Price\t Quantity\t")
 		for _, product := range products {
-			fmt.Fprintln(w, "| Name\t Description\t Price\t Quantity\t")
-			fmt.Fprintf(w, "| %s\t %s\t Rp%.2f\t %d\t\n", product.Name, product.Description, product.Price, product.Quantity)
+			fmt.Fprintf(w, "| %d\t %s\t %s\t Rp%.2f\t %d\t\n", product.Id, product.Name, product.Description, product.Price, product.Quantity)
 		}
 	}
 
@@ -291,10 +295,23 @@ ShowCart:
 	goto UserMenu
 
 CreateOrders:
-	err = h.CreateOrder(entity.Order{})
+	products, err = h.ReadCartItemsByUserID(user.Id)
+	if err != nil {
+		fmt.Println("Failed to place order. Please try again.")
+		goto UserMenu
+	}
+
+	for _, product := range products {
+		totalprice += product.Price * float32(product.Quantity)
+	}
+
+	err = h.CreateOrder(entity.Order{UserId: user.Id, Products: products, TotalPrice: totalprice})
 	if err != nil {
 		slog.Error(err.Error())
 		fmt.Println("Failed to place order. Please try again.")
-		return
+		goto UserMenu
 	}
+
+	fmt.Println("\nCreate order success!!!!")
+	goto UserMenu
 }

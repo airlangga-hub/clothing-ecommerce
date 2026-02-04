@@ -191,6 +191,7 @@ func (h *Handler) CreateCartItem(userID, productID, quantity int) error {
 func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.Product, error) {
 	rows, err := h.DB.Query(
 		`SELECT
+			p.id,
 			p.name,
 			p.description,
 			p.price,
@@ -213,6 +214,7 @@ func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.Product, error) {
 		var price int
 
 		if err := rows.Scan(
+			&product.Id,
 			&product.Name,
 			&product.Description,
 			&price,
@@ -220,7 +222,7 @@ func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.Product, error) {
 		); err != nil {
 			return nil, err
 		}
-		
+
 		product.Price = float32(price) / 100
 
 		products = append(products, product)
