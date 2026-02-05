@@ -41,3 +41,17 @@ CREATE TABLE order_items (
   FOREIGN KEY (product_id) REFERENCES products (id),
   UNIQUE (order_id, product_id)
 );
+
+DELIMITER //
+CREATE PROCEDURE place_order_items(IN o_id INTEGER, IN p_id INTEGER, IN qty INTEGER)
+BEGIN
+    INSERT INTO order_items
+		(order_id, product_id, quantity)
+	VALUES
+		(o_id, p_id, qty);
+    
+    UPDATE products
+	SET stock = stock - qty
+	WHERE id = p_id;
+END //
+DELIMITER ;
