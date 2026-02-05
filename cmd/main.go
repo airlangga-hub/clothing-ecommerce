@@ -313,7 +313,7 @@ CreateOrders:
 		totalprice += product.Price * float32(product.Quantity)
 	}
 
-	err = h.CreateOrder(entity.Order{UserId: user.Id, Products: products, TotalPrice: totalprice})
+	err = h.CreateOrder(entity.Order{UserId: user.Id, Products: products, TotalPrice: totalprice * 100})
 	if err != nil {
 		slog.Error(err.Error())
 		fmt.Println("Failed to place order. Please try again.")
