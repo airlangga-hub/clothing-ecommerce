@@ -47,6 +47,7 @@ func main() {
 		buf        bytes.Buffer
 		price      int
 		totalprice int
+		userReports []entity.UserReport
 	)
 	w := tabwriter.NewWriter(&buf, 0, 0, 1, ' ', tabwriter.Debug)
 	scanner := bufio.NewScanner(os.Stdin)
@@ -149,8 +150,8 @@ AdminMenu:
 	switch input {
 	case "1":
 		goto CreateProduct
-	// case "2":
-	// goto ShowUserReports
+	case "2":
+		goto ShowUserReports
 	// case "3":
 	// goto ShowOrderReports
 	// case "4":
@@ -202,6 +203,30 @@ CreateProduct:
 
 	fmt.Println("Product created successfully!!!!")
 
+	goto AdminMenu
+
+ShowUserReports:
+	fmt.Println("\nGenerating user report....")
+
+	userReports, err = h.UserReport()
+	if err != nil {
+		slog.Error(err.Error())
+		goto AdminMenu
+	}
+	
+	fmt.Fprintln(w, "| User ID\t User Email\t Total Spending\t")
+	for _, report := range userReports {
+		fmt.Fprintf(w, "| %d\t %s\t Rp%.2f\t\n", report.Id, report.Email, report.TotalSpending)
+	}
+	
+	if err := w.Flush(); err != nil {
+		slog.Error(err.Error())
+		goto AdminMenu
+	}
+	
+	helper.PrintStdOut(&buf)
+	buf.Reset()
+	
 	goto AdminMenu
 
 UserMenu:
