@@ -46,3 +46,10 @@ type InsertOrder struct {
 	CreatedAt  time.Time
 	Products   []Product
 }
+
+type StockReport struct {
+	ProductId   int
+	ProductName string
+	Stock       int
+	Label       string
+}

@@ -38,16 +38,18 @@ func main() {
 
 	// variables
 	var (
-		user       entity.User
-		u          entity.User
-		products   []entity.Product
-		product    entity.Product
-		priceStr   string
-		input      string
-		buf        bytes.Buffer
-		price      int
-		totalprice int
-		userReports []entity.UserReport
+		user         entity.User
+		u            entity.User
+		products     []entity.Product
+		product      entity.Product
+		priceStr     string
+		input        string
+		buf          bytes.Buffer
+		price        int
+		totalprice   int
+		userReports  []entity.UserReport
+		stockreports []entity.StockReport
+		orders       []entity.Order
 	)
 	w := tabwriter.NewWriter(&buf, 0, 0, 1, ' ', tabwriter.Debug)
 	scanner := bufio.NewScanner(os.Stdin)
@@ -80,9 +82,19 @@ Register:
 	scanner.Scan()
 	user.Email = strings.TrimSpace(scanner.Text())
 
+	if user.Email == "" {
+		fmt.Println("\nEmail cannot be empty.")
+		goto Register
+	}
+
 	fmt.Print("Password: ")
 	scanner.Scan()
 	user.Password = strings.TrimSpace(scanner.Text())
+
+	if user.Password == "" {
+		fmt.Println("\nPassword cannot be empty.")
+		goto Register
+	}
 
 	if err := h.CreateUser(user.Email, user.Password); err != nil {
 		slog.Error(err.Error())
@@ -106,9 +118,19 @@ Login:
 	scanner.Scan()
 	user.Email = strings.TrimSpace(scanner.Text())
 
+	if user.Email == "" {
+		fmt.Println("\nEmail cannot be empty.")
+		goto Login
+	}
+
 	fmt.Print("Password: ")
 	scanner.Scan()
 	user.Password = strings.TrimSpace(scanner.Text())
+
+	if user.Password == "" {
+		fmt.Println("\nPassword cannot be empty.")
+		goto Login
+	}
 
 	u, err = h.ReadUserByEmail(user.Email)
 	if err != nil {
@@ -152,10 +174,10 @@ AdminMenu:
 		goto CreateProduct
 	case "2":
 		goto ShowUserReports
-	// case "3":
-	// goto ShowOrderReports
-	// case "4":
-	// goto ShowStockReports
+	case "3":
+		goto ShowOrderReports
+	case "4":
+		goto ShowStockReports
 	default:
 		goto Exit
 	}
@@ -213,20 +235,67 @@ ShowUserReports:
 		slog.Error(err.Error())
 		goto AdminMenu
 	}
-	
+
 	fmt.Fprintln(w, "| User ID\t User Email\t Total Spending\t")
 	for _, report := range userReports {
 		fmt.Fprintf(w, "| %d\t %s\t Rp%.2f\t\n", report.Id, report.Email, report.TotalSpending)
 	}
-	
+
 	if err := w.Flush(); err != nil {
 		slog.Error(err.Error())
 		goto AdminMenu
 	}
-	
+
 	helper.PrintStdOut(&buf)
 	buf.Reset()
-	
+
+	goto AdminMenu
+
+ShowOrderReports:
+	fmt.Println("\nGenerating Order Reports....")
+	orders, err = h.OrderReport()
+	if err != nil {
+		slog.Error(err.Error())
+		goto AdminMenu
+	}
+
+	fmt.Fprintln(w, "| Order ID\t User ID\t Total Price\t Product\t Description\t Quantity\t Created At\t")
+	for _, order := range orders {
+		for _, product := range order.Products {
+			fmt.Fprintf(w, "| %d\t %d\t Rp%.2f\t %s\t %s\t %d\t %s\t\n", order.Id, order.UserId, order.TotalPrice, product.Name, product.Description, product.Quantity, order.CreatedAt)
+		}
+	}
+
+	if err := w.Flush(); err != nil {
+		slog.Error(err.Error())
+		goto AdminMenu
+	}
+
+	helper.PrintStdOut(&buf)
+	buf.Reset()
+
+	goto AdminMenu
+
+ShowStockReports:
+	fmt.Println("\nGenerating Stock Reports....")
+	stockreports, err = h.StockReports()
+	if err != nil {
+		slog.Error(err.Error())
+		goto AdminMenu
+	}
+
+	fmt.Fprintln(w, "| Product ID\t Product Name\t Stock\t Label\t")
+	for _, stockreport := range stockreports {
+		fmt.Fprintf(w, "| %d\t %s\t %d\t %s\t\n", stockreport.ProductId, stockreport.ProductName, stockreport.Stock, stockreport.Label)
+	}
+
+	if err := w.Flush(); err != nil {
+		slog.Error(err.Error())
+		goto AdminMenu
+	}
+
+	helper.PrintStdOut(&buf)
+	buf.Reset()
 	goto AdminMenu
 
 UserMenu:
@@ -294,12 +363,22 @@ AddToCart:
 		goto AddToCart
 	}
 
+	if product.Id <= 0 {
+		fmt.Println("\nProduct ID must be a positive number.")
+		goto AddToCart
+	}
+
 	fmt.Print("Quantity: ")
 	scanner.Scan()
 	product.Quantity, err = strconv.Atoi(strings.TrimSpace(scanner.Text()))
 	if err != nil {
 		slog.Error(err.Error())
 		fmt.Println("\nInvalid quantity!!!!")
+		goto AddToCart
+	}
+
+	if product.Quantity <= 0 {
+		fmt.Println("\nQuantity must be a positive number.")
 		goto AddToCart
 	}
 
@@ -366,7 +445,7 @@ CreateOrders:
 
 ShowOrders:
 	fmt.Println("\nHere are your orders:")
-	orders, err := h.ReadOrdersByUserID(user.Id)
+	orders, err = h.ReadOrdersByUserID(user.Id)
 	if err != nil {
 		slog.Error(err.Error())
 		goto UserMenu

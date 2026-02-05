@@ -66,3 +66,28 @@ BEGIN
     END IF;
 END //
 DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE place_cart_item(IN u_id INTEGER, IN p_id INTEGER, IN qty INTEGER)
+BEGIN
+    DECLARE current_qty INTEGER DEFAULT 0;
+    DECLARE p_stock INTEGER;
+
+    -- Fix 1: Filter user_id in the JOIN, not the WHERE
+    SELECT COALESCE(ci.quantity, 0), p.stock 
+    INTO current_qty, p_stock
+    FROM products p
+    LEFT JOIN cart_items ci ON p.id = ci.product_id AND ci.user_id = u_id
+    WHERE p.id = p_id;
+
+    -- Fix 2: Validation
+    IF p_stock < (current_qty + qty) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Insufficient stock';
+    ELSE
+        -- Fix 3: Handle Duplicate Keys
+        INSERT INTO cart_items (user_id, product_id, quantity)
+        VALUES (u_id, p_id, qty)
+        ON DUPLICATE KEY UPDATE quantity = quantity + qty;
+    END IF;
+END //
+DELIMITER ;

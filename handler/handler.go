@@ -173,12 +173,7 @@ func (h *Handler) ReadAllProducts() ([]entity.Product, error) {
 // create cart item
 func (h *Handler) CreateCartItem(userID, productID, quantity int) error {
 	_, err := h.DB.Exec(
-		`INSERT INTO cart_items
-			(user_id, product_id, quantity)
-		VALUES
-			(?, ?, ?) AS new
-		ON DUPLICATE KEY
-		UPDATE quantity = cart_items.quantity + new.quantity;`,
+		`call place_cart_item(?, ?, ?)`,
 		userID, productID, quantity,
 	)
 
@@ -430,11 +425,137 @@ func (h *Handler) UserReport() ([]entity.UserReport, error) {
 		); err != nil {
 			return nil, err
 		}
-		
+
 		userReport.TotalSpending = float64(totalSpending) / 100
-		
+
 		userReports = append(userReports, userReport)
 	}
-	
+
 	return userReports, nil
+}
+
+func (h *Handler) StockReports() ([]entity.StockReport, error) {
+	rows, err := h.DB.Query(
+		`SELECT 
+			id,
+			name,
+			stock,
+			IF(stock < 10, 'low stock', IF(stock < 20, 'almost low stock', 'stock ok'))
+		FROM products`,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	stockreports := make([]entity.StockReport, 0, 10)
+	for rows.Next() {
+		var stockreport entity.StockReport
+
+		if err := rows.Scan(
+			&stockreport.ProductId,
+			&stockreport.ProductName,
+			&stockreport.Stock,
+			&stockreport.Label,
+		); err != nil {
+			return nil, err
+		}
+
+		stockreports = append(stockreports, stockreport)
+	}
+	return stockreports, nil
+}
+
+// read orders by user id
+func (h *Handler) OrderReport() ([]entity.Order, error) {
+	rows, err := h.DB.Query(
+		`SELECT
+			o.id,
+			o.user_id,
+			o.total_price,
+			o.created_at,
+			oi.product_id,
+			oi.quantity
+		FROM orders o
+		JOIN order_items oi ON o.id = oi.order_id;`,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapOrders := make(map[int]*entity.Order)
+	productIDset := make(map[int]struct{})
+
+	for rows.Next() {
+		var order entity.Order
+		var totalPrice int
+		var product entity.Product
+
+		if err := rows.Scan(
+			&order.Id,
+			&order.UserId,
+			&totalPrice,
+			&order.CreatedAt,
+			&product.Id,
+			&product.Quantity,
+		); err != nil {
+			return nil, err
+		}
+
+		productIDset[product.Id] = struct{}{}
+
+		if o, exist := mapOrders[order.Id]; exist {
+			o.Products = append(
+				o.Products,
+				entity.Product{
+					Id:       product.Id,
+					Quantity: product.Quantity,
+				},
+			)
+		} else {
+			mapOrders[order.Id] = &entity.Order{
+				Id:         order.Id,
+				UserId:     order.UserId,
+				TotalPrice: float64(totalPrice) / 100,
+				CreatedAt:  order.CreatedAt,
+				Products: []entity.Product{
+					{
+						Id:       product.Id,
+						Quantity: product.Quantity,
+					},
+				},
+			}
+		}
+	}
+
+	productIDs := make([]int, 0, len(productIDset))
+	for id := range productIDset {
+		productIDs = append(productIDs, id)
+	}
+
+	products, err := h.ReadProductsByProductIDs(productIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	mapProducts := make(map[int]entity.Product)
+	for _, product := range products {
+		mapProducts[product.Id] = product
+	}
+
+	orders := make([]entity.Order, 0, len(mapOrders))
+	for _, order := range mapOrders {
+		for i, product := range order.Products {
+			if p, exist := mapProducts[product.Id]; exist {
+				order.Products[i].Name = p.Name
+				order.Products[i].Description = p.Description
+				order.Products[i].Price = p.Price
+			}
+		}
+		orders = append(orders, *order)
+	}
+
+	return orders, nil
 }
