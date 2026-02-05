@@ -279,10 +279,7 @@ func (h *Handler) CreateOrder(order entity.Order) error {
 	order.Id = int(orderId)
 
 	stmt, err := tx.Prepare(
-		`INSERT INTO order_items
-			(order_id, product_id, quantity)
-		VALUES
-			(?, ?, ?)`,
+		`CALL place_order_items(?, ?, ?)`,
 	)
 	if err != nil {
 		return err
@@ -298,23 +295,6 @@ func (h *Handler) CreateOrder(order entity.Order) error {
 	// delete cart items
 	if err := h.DeleteCartItemsByUserID(order.UserId); err != nil {
 		return err
-	}
-
-	// decrease stock
-	stmt, err = tx.Prepare(
-		`UPDATE products
-		SET stock = stock - ?
-		WHERE id = ?`,
-	)
-	if err != nil {
-		return err
-	}
-
-	for _, product := range order.Products {
-		_, err := stmt.Exec(product.Quantity, product.Id)
-		if err != nil {
-			return err
-		}
 	}
 
 	if err := tx.Commit(); err != nil {
