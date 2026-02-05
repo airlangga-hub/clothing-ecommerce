@@ -292,7 +292,7 @@ ShowCart:
 		goto UserMenu
 	} else {
 		fmt.Println("\nCart Contents: ")
-		fmt.Fprintln(w, "| productId\t Name\t Description\t Price\t Quantity\t")
+		fmt.Fprintln(w, "| Product ID\t Name\t Description\t Price\t Quantity\t")
 		for _, product := range products {
 			fmt.Fprintf(w, "| %d\t %s\t %s\t Rp%.2f\t %d\t\n", product.Id, product.Name, product.Description, product.Price, product.Quantity)
 		}
