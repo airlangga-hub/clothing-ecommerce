@@ -328,10 +328,28 @@ CreateOrders:
 
 	fmt.Println("\nCreate order success!!!!")
 	goto UserMenu
-	
+
 ShowOrders:
+	orders, err := h.ReadOrdersByUserID(user.Id)
+	if err != nil {
+		slog.Error(err.Error())
+		goto UserMenu
+	}
 	
+	fmt.Fprintln(w, "| Order ID\t User ID\t Total Price\t Product\t Description\t Quantity\t Created At\t")
+	for _, order := range orders {
+		for _, product := range order.Products {
+			fmt.Fprintf(w, "| %d\t %d\t Rp%.2f\t %s\t %s\t %d\t %s\t\n", order.Id, order.UserId, order.TotalPrice, product.Name, product.Description, product.Quantity, order.CreatedAt)
+		}
+	}
+
+	if err := w.Flush(); err != nil {
+		slog.Error(err.Error())
+		goto UserMenu
+	}
+
+	helper.PrintStdOut(&buf)
+	buf.Reset()
+
+	goto UserMenu
 }
-
-
-	

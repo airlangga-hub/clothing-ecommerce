@@ -313,7 +313,7 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]entity.Order, error) {
 			o.total_price,
 			o.created_at,
 			oi.product_id,
-			oi.quantity,
+			oi.quantity
 		FROM orders o
 		JOIN order_items oi ON o.id = oi.order_id
 		WHERE o.user_id = ?;`,
@@ -325,7 +325,7 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]entity.Order, error) {
 	}
 	defer rows.Close()
 
-	mapOrders := make(map[int]entity.Order)
+	mapOrders := make(map[int]*entity.Order)
 	productIDset := make(map[int]struct{})
 
 	for rows.Next() {
@@ -346,16 +346,16 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]entity.Order, error) {
 
 		productIDset[product.Id] = struct{}{}
 
-		if order, exist := mapOrders[order.Id]; exist {
-			order.Products = append(
-				order.Products,
+		if o, exist := mapOrders[order.Id]; exist {
+			o.Products = append(
+				o.Products,
 				entity.Product{
 					Id:       product.Id,
 					Quantity: product.Quantity,
 				},
 			)
 		} else {
-			mapOrders[order.Id] = entity.Order{
+			mapOrders[order.Id] = &entity.Order{
 				Id:         order.Id,
 				UserId:     order.UserId,
 				TotalPrice: float64(totalPrice) / 100,
@@ -394,7 +394,7 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]entity.Order, error) {
 				order.Products[i].Price = p.Price
 			}
 		}
-		orders = append(orders, order)
+		orders = append(orders, *order)
 	}
 
 	return orders, nil
