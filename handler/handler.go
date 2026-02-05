@@ -408,7 +408,8 @@ func (h *Handler) UserReport() ([]entity.UserReport, error) {
 			SUM(o.total_price) AS total_spending
 		FROM users u
 		JOIN orders o ON u.id = o.user_id
-		GROUP BY u.id`,
+		GROUP BY u.id
+		ORDER BY total_spending DESC`,
 	)
 
 	if err != nil {
