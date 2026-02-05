@@ -3,7 +3,7 @@ CREATE TABLE products (
   name VARCHAR(100) NOT NULL,
   description VARCHAR(100) NOT NULL,
   price INTEGER NOT NULL,
-  stocks INTEGER NOT NULL
+  stock INTEGER NOT NULL
 );
 
 CREATE TABLE users (
@@ -22,7 +22,6 @@ CREATE TABLE cart_items (
   FOREIGN KEY (product_id) REFERENCES products (id),
   UNIQUE (user_id, product_id)
 );
-
 
 CREATE TABLE orders (
   id INTEGER AUTO_INCREMENT PRIMARY KEY,
@@ -45,13 +44,22 @@ CREATE TABLE order_items (
 DELIMITER //
 CREATE PROCEDURE place_order_items(IN o_id INTEGER, IN p_id INTEGER, IN qty INTEGER)
 BEGIN
-    INSERT INTO order_items
-		(order_id, product_id, quantity)
-	VALUES
-		(o_id, p_id, qty);
+    DECLARE current_stock INTEGER;
     
-    UPDATE products
-	SET stock = stock - qty
-	WHERE id = p_id;
+    SELECT stock INTO current_stock FROM products WHERE id = p_id;
+    
+    IF current_stock < qty THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Insufficient stock';
+    ELSE
+        INSERT INTO order_items
+    		(order_id, product_id, quantity)
+    	VALUES
+    		(o_id, p_id, qty);
+        
+        UPDATE products
+    	SET stock = stock - qty
+    	WHERE id = p_id;
+    END IF;
 END //
 DELIMITER ;
