@@ -330,12 +330,13 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]entity.Order, error) {
 
 	for rows.Next() {
 		var order entity.Order
+		var totalPrice int
 		var product entity.Product
 
 		if err := rows.Scan(
 			&order.Id,
 			&order.UserId,
-			&order.TotalPrice,
+			&totalPrice,
 			&order.CreatedAt,
 			&product.Id,
 			&product.Quantity,
@@ -357,7 +358,7 @@ func (h *Handler) ReadOrdersByUserID(userID int) ([]entity.Order, error) {
 			mapOrders[order.Id] = entity.Order{
 				Id:         order.Id,
 				UserId:     order.UserId,
-				TotalPrice: order.TotalPrice,
+				TotalPrice: float64(totalPrice) / 100,
 				CreatedAt:  order.CreatedAt,
 				Products: []entity.Product{
 					{

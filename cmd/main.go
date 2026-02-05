@@ -177,6 +177,8 @@ UserMenu:
 		goto ShowCart
 	case "4":
 		goto CreateOrders
+	case "5":
+		goto ShowOrders
 	default:
 		goto Exit
 	}
@@ -326,4 +328,10 @@ CreateOrders:
 
 	fmt.Println("\nCreate order success!!!!")
 	goto UserMenu
+	
+ShowOrders:
+	
 }
+
+
+	
