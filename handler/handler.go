@@ -59,13 +59,13 @@ func (h *Handler) ReadUserByEmail(email string) (entity.User, error) {
 }
 
 // create product
-func (h *Handler) CreateProduct(name, description string, price int) error {
+func (h *Handler) CreateProduct(name, description string, price, stock int) error {
 	_, err := h.DB.Exec(
 		`INSERT INTO products
-			(name, description, price)
+			(name, description, price, stock)
 		VALUES
-			(?, ?, ?);`,
-		name, description, price,
+			(?, ?, ?, ?);`,
+		name, description, price, stock,
 	)
 
 	if err != nil {
@@ -132,7 +132,8 @@ func (h *Handler) ReadAllProducts() ([]entity.Product, error) {
 			id,
 			name,
 			description,
-			price
+			price,
+			stock
 		FROM products;`,
 	)
 
@@ -152,6 +153,7 @@ func (h *Handler) ReadAllProducts() ([]entity.Product, error) {
 			&product.Name,
 			&product.Description,
 			&price,
+			&product.Stock,
 		); err != nil {
 			return nil, err
 		}
@@ -191,6 +193,7 @@ func (h *Handler) CreateCartItem(userID, productID, quantity int) error {
 func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.Product, error) {
 	rows, err := h.DB.Query(
 		`SELECT
+			p.id,
 			p.name,
 			p.description,
 			p.price,
@@ -213,6 +216,7 @@ func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.Product, error) {
 		var price int
 
 		if err := rows.Scan(
+			&product.Id,
 			&product.Name,
 			&product.Description,
 			&price,
@@ -220,7 +224,7 @@ func (h *Handler) ReadCartItemsByUserID(userID int) ([]entity.Product, error) {
 		); err != nil {
 			return nil, err
 		}
-		
+
 		product.Price = float32(price) / 100
 
 		products = append(products, product)
@@ -294,6 +298,23 @@ func (h *Handler) CreateOrder(order entity.Order) error {
 	// delete cart items
 	if err := h.DeleteCartItemsByUserID(order.UserId); err != nil {
 		return err
+	}
+
+	// decrease stock
+	stmt, err = tx.Prepare(
+		`UPDATE products
+		SET stock = stock - ?
+		WHERE id = ?`,
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, product := range order.Products {
+		_, err := stmt.Exec(product.Quantity, product.Id)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

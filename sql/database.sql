@@ -2,7 +2,8 @@ CREATE TABLE products (
   id INTEGER AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   description VARCHAR(100) NOT NULL,
-  price INTEGER NOT NULL
+  price INTEGER NOT NULL,
+  stocks INTEGER NOT NULL
 );
 
 CREATE TABLE users (
@@ -22,6 +23,15 @@ CREATE TABLE cart_items (
   UNIQUE (user_id, product_id)
 );
 
+
+CREATE TABLE orders (
+  id INTEGER AUTO_INCREMENT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  total_price INTEGER NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
 CREATE TABLE order_items (
   id INTEGER AUTO_INCREMENT PRIMARY KEY,
   order_id INTEGER NOT NULL,
@@ -30,12 +40,4 @@ CREATE TABLE order_items (
   FOREIGN KEY (order_id) REFERENCES orders (id),
   FOREIGN KEY (product_id) REFERENCES products (id),
   UNIQUE (order_id, product_id)
-);
-
-CREATE TABLE orders (
-  id INTEGER AUTO_INCREMENT PRIMARY KEY,
-  user_id INTEGER NOT NULL,
-  total_price INTEGER NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users (id)
 );

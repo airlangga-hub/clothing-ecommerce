@@ -15,6 +15,7 @@ type Product struct {
 	Description string
 	Price       float32
 	Quantity    int
+	Stock       int
 }
 
 type CartItem struct {
